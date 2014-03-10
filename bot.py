@@ -12,24 +12,24 @@ class IRCBot():
     def output(self, data):
         print(">> %s: %s" % (self.server, data))
 
-    def sendMessage(self, channel, message):
-        self.sock.send("PRIVMSG %s :%s\r\n" %(channel, message))
-
     def sendPacket(self, packet):
         self.sock.send(packet + "\r\n")
 
+    def sendMessage(self, channel, message):
+        self.sendPacket("PRIVMSG %s :%s" %(channel, message))
+
     def joinChan(self, channel):
-        self.sock.send("JOIN %s\r\n" % channel)
+        self.sendPacket("JOIN %s" %channel)
 
     def joinChannels(self):
         for channel in self.channels:
             self.joinChan(channel)
 
     def changeTopic(self, topic, channel):
-        self.sock.send("TOPIC %s :%s\r\n" %(channel, topic))
+        self.sendPacket("TOPIC %s :%s" %(channel, topic))
 
     def sendAction(self, action, channel):
-        self.sock.send("ACTION %s :%s\r\n" %(channel, action))
+        self.sendPacket("ACTION %s :%s" %(channel, action))
 
     def getMessage(self):
         return self.x[4]
