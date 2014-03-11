@@ -35,15 +35,15 @@ class IRCBot():
     def handleMessage(self, message):
         channel = message.split(" ")
         channel = channel[2]
-        message = message.split(":")
-        thread.start_new_thread(self.runPlugin, (message[2], channel))
+        #message = message.split(":")
+        thread.start_new_thread(self.runPlugin, (message, channel))
 
     def runPlugin(self, message, channel):
         for plugins in pluginloader.getPlugins():
             plugin = pluginloader.loadPlugin(plugins)
             event = plugin.find(message)
             if event == 1:
-                plugin.run(self, channel)
+                plugin.run(self, channel, message)
                 break
 
     def splitData(self):
@@ -63,14 +63,21 @@ class IRCBot():
             self.data = self.sock.recv(2040)
             self.output(self.data)
             self.splitData()
+            try:
+                if re.search("PRIVMSG", self.x[1]):
+                    self.handleMessage(self.data)
+            except IndexError:
+                pass
+            try:
+                if re.search("PING", self.x[0]):
+                    self.sendPacket("PONG %s" %self.x[1])
+                    self.joinChannels()
+            except IndexError:
+                pass
 
-            if re.search("PRIVMSG", self.x[1]):
-                self.handleMessage(self.data)
-
-            if re.search("PING", self.x[0]):
-                self.sendPacket("PONG %s" %self.x[1])
-                self.joinChannels()
-
-            if re.search(self.nick, self.x[2]):
-                self.joinChannels()
-                # THIS IS BAD
+            try:
+                if re.search(self.nick, self.x[2]):
+                    self.joinChannels()
+                    # THIS IS BAD
+            except IndexError:
+                pass
