@@ -1,7 +1,7 @@
 import imp
 import os
 
-plugindir= "C:\Users\Josh\PycharmProjects\IRC Bot Shell\plugins"
+plugindir= "./plugins"
 main = "plugin"
 
 def getPlugins():
