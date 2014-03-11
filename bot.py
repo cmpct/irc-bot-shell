@@ -1,13 +1,14 @@
-import socket, pluginloader, thread
+import socket, pluginloader, thread, ssl, re
 
 class IRCBot():
 
-    def __init__(self, nick, user, server, ip, channels):
+    def __init__(self, nick, user, server, ip, channels, ssl=False):
         self.nick     = nick
         self.user     = user
         self.server   = server
         self.ip       = ip
         self.channels  = channels
+        self.ssl      = ssl
 
     def output(self, data):
         print(">>%s: %s" % (self.server, data))
@@ -42,7 +43,7 @@ class IRCBot():
             plugin = pluginloader.loadPlugin(plugins)
             event = plugin.find(message)
             if event == 1:
-                plugin.run()
+                plugin.run(self, channel)
                 break
 
     def splitData(self):
@@ -52,6 +53,9 @@ class IRCBot():
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.server, self.ip))
+        if self.ssl == True:
+            self.sock = ssl.wrap_socket(self.sock)
+
         self.sendPacket("NICK %s" %self.nick)
         self.sendPacket("USER %s %s %s :%s" %(self.user, self.user, self.user, self.user))
 
@@ -60,16 +64,13 @@ class IRCBot():
             self.output(self.data)
             self.splitData()
 
-            try:
-                if self.x[1] == "PRIVMSG":
-                    self.handleMessage(self.data)
+            if re.search("PRIVMSG", self.x[1]):
+                self.handleMessage(self.data)
 
-                if self.x[0] == ":PING":
-                    self.sendPacket("PONG %s" %self.x[1])
-                    self.joinChannels()
+            if re.search("PING", self.x[0]):
+                self.sendPacket("PONG %s" %self.x[1])
+                self.joinChannels()
 
-                if self.x[2] == self.nick:
-                    self.joinChannels()
-                    # THIS IS BAD
-            except IndexError:
-                print "Who cares python"
+            if re.search(self.nick, self.x[2]):
+                self.joinChannels()
+                # THIS IS BAD

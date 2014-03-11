@@ -1,3 +1,4 @@
+from bot import IRCBot
 def find(command):
     triggers = ["hello", "hi", "hey"]
     for cmd in triggers:
@@ -5,5 +6,5 @@ def find(command):
             return 1
     return 0
 
-def run():
-    print "This works so far, now to communicate with IRC through the class.."
+def run(irc, channel):
+    IRCBot.sendMessage(irc, channel, "Hello")
