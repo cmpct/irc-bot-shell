@@ -1,4 +1,4 @@
-import socket
+import socket, pluginloader, thread
 
 class IRCBot():
 
@@ -7,10 +7,10 @@ class IRCBot():
         self.user     = user
         self.server   = server
         self.ip       = ip
-        self.channels  = channels #Make this an array
+        self.channels  = channels
 
     def output(self, data):
-        print(">> %s: %s" % (self.server, data))
+        print(">>%s: %s" % (self.server, data))
 
     def sendPacket(self, packet):
         self.sock.send(packet + "\r\n")
@@ -31,8 +31,19 @@ class IRCBot():
     def sendAction(self, action, channel):
         self.sendPacket("ACTION %s :%s" %(channel, action))
 
-    def getMessage(self):
-        return self.x[4]
+    def handleMessage(self, message):
+        channel = message.split(" ")
+        channel = channel[2]
+        message = message.split(":")
+        thread.start_new_thread(self.runPlugin, (message[2], channel))
+
+    def runPlugin(self, message, channel):
+        for plugins in pluginloader.getPlugins():
+            plugin = pluginloader.loadPlugin(plugins)
+            event = plugin.find(message)
+            if event == 1:
+                plugin.run()
+                break
 
     def splitData(self):
         self.x = self.data.split(" ")
@@ -49,5 +60,16 @@ class IRCBot():
             self.output(self.data)
             self.splitData()
 
-            if self.x[0] == ":PING":
-                self.sendPacket("PONG %s" %self.x[1])
+            try:
+                if self.x[1] == "PRIVMSG":
+                    self.handleMessage(self.data)
+
+                if self.x[0] == ":PING":
+                    self.sendPacket("PONG %s" %self.x[1])
+                    self.joinChannels()
+
+                if self.x[2] == self.nick:
+                    self.joinChannels()
+                    # THIS IS BAD
+            except IndexError:
+                print "Who cares python"
